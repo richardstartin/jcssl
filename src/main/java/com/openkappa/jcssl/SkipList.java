@@ -87,9 +87,8 @@ public class SkipList {
     int last = itemsPerLevel[maxLevel - 1] - 1;
     int middle = 0;
     // scan highest fast lane with binary search
-    // TODO - replace with JDK implementation
     while (first < last) {
-      middle = (first + last) / 2;
+      middle = (first + last) >>> 1;
       if (fastLanes[middle] < key) {
         first = middle + 1;
       } else if (fastLanes[middle] == key) {
@@ -103,7 +102,7 @@ public class SkipList {
       curPos = last;
     int level;
     // traverse over fast lanes
-    for (level = maxLevel - 1; level >= 0; level--) {
+    for (level = maxLevel - 1; level >= 0; --level) {
       int rPos = curPos - startsOfFastLanes[level];
       while (rPos < itemsPerLevel[level] &&
               key >= fastLanes[++curPos])
