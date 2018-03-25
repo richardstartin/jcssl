@@ -2,6 +2,7 @@ package com.openkappa.jcssl;
 
 import java.util.Arrays;
 
+import static com.openkappa.jcssl.Constants.MAX_SKIP;
 import static com.openkappa.jcssl.Constants.TOP_LANE_BLOCK;
 import static com.openkappa.jcssl.DataNode.newNode;
 import static com.openkappa.jcssl.ProxyNode.newProxyNode;
@@ -16,6 +17,9 @@ public class SkipList {
    * @param skip
    */
   public static SkipList createSkipList(byte maxLevel, byte skip) {
+    if (toUnsigned(skip) > MAX_SKIP) {
+      throw new IllegalArgumentException("Skip must be less than max skip=" + MAX_SKIP);
+    }
     return new SkipList(maxLevel, skip);
   }
 
@@ -49,7 +53,7 @@ public class SkipList {
   public void insert(int key) {
     DataNode newNode = newNode(key);
     boolean nodeInserted = true;
-    boolean flaneInserted = false;
+    boolean fastLaneInserted = false;
 
     // add new node at the end of the data list
     tail.setNext(newNode);
@@ -59,14 +63,13 @@ public class SkipList {
     for (int level = 0; level < toUnsigned(maxLevel); ++level) {
       // TODO - probably a better way of writing this
       if (numElements % (int) Math.pow(toUnsigned(skip), (level + 1)) == 0 && nodeInserted)
-        // TODO - should this be != Integer.MAX_VALUE?
-        nodeInserted = insertItemIntoFastLane((byte)level, newNode) != 0;
+        nodeInserted = insertItemIntoFastLane((byte)level, newNode) != Integer.MAX_VALUE;
       else
         break;
-      flaneInserted = true;
+      fastLaneInserted = true;
     }
 
-    if (!flaneInserted)
+    if (!fastLaneInserted)
       findAndInsertIntoProxyNode(newNode);
 
     ++numElements;
@@ -174,7 +177,9 @@ public class SkipList {
     // TODO: it's highly likely that there are porting errors here since this section relies on AVX intrinsics in the original code
     int itemsInFastLane = itemsPerLevel[0];
     rPos = curPos - start_of_flane;
-    while (rPos++ < itemsInFastLane && fastLanes[curPos++] < endKey) {
+    while (rPos < itemsInFastLane && fastLanes[curPos] < endKey) {
+      ++rPos;
+      ++curPos;
       count += toUnsigned(skip);
     }
 
