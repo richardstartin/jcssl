@@ -154,12 +154,11 @@ public class SkipList {
       rPos += SIMD_SEGMENTS;
       count += (SIMD_SEGMENTS *  toUnsigned(skip));
     }
-    curPos--;
-    rPos--;
     itemsInFastLane += SIMD_SEGMENTS;
-
-    while (endKey >= fastLanes[++curPos] && rPos < itemsInFastLane) {
-      rPos++;
+    while (rPos < itemsInFastLane && curPos < fastLanes.length && fastLanes[curPos] < endKey) {
+      ++curPos;
+      ++rPos;
+      count += toUnsigned(skip);
     }
 
     proxy = fastLaneValues[rPos];
@@ -178,7 +177,7 @@ public class SkipList {
    * Gets the size of the skip
    * @return the skip
    */
-  public int getSkip() {
+  int getSkip() {
     return toUnsigned(skip);
   }
 

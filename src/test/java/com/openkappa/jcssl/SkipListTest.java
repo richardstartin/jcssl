@@ -83,4 +83,48 @@ public class SkipListTest {
   }
 
 
+  @Test
+  public void testRangeQueryDenseRepeatedValues2() {
+    SkipList sl = SkipList.createSkipList(9, 5);
+    for (int i = 0; i < 100_000; ++i) {
+      sl.insert(i);
+      sl.insert(i);
+    }
+
+    RangeSearchResult r1 = sl.searchRange(0, 1000);
+    assertEquals(2000, r1.getCount());
+    assertEquals(0, r1.getStart().getKey());
+    assertEquals(1000, r1.getEnd().getKey());
+    RangeSearchResult r2 = sl.searchRange(1, 1001);
+    assertEquals(2000, r2.getCount());
+    assertEquals(1, r2.getStart().getKey());
+    assertEquals(1001, r2.getEnd().getKey());
+  }
+
+
+  @Test
+  public void testRangeQueryDenseRepeatedValues3() {
+    SkipList sl = SkipList.createSkipList(9, 5);
+    for (int i = 0; i < 100_000; ++i) {
+      sl.insert(i);
+      sl.insert(i);
+      sl.insert(i);
+    }
+
+    RangeSearchResult r1 = sl.searchRange(0, 1000);
+    assertEquals(3000, r1.getCount());
+    assertEquals(0, r1.getStart().getKey());
+    assertEquals(1000, r1.getEnd().getKey());
+    RangeSearchResult r2 = sl.searchRange(1, 1001);
+    assertEquals(3000, r2.getCount());
+    assertEquals(1, r2.getStart().getKey());
+    assertEquals(1001, r2.getEnd().getKey());
+
+    RangeSearchResult r3 = sl.searchRange(93, 128);
+    assertEquals((128 - 93) * 3, r3.getCount());
+    assertEquals(93, r3.getStart().getKey());
+    assertEquals(128, r3.getEnd().getKey());
+  }
+
+
 }
