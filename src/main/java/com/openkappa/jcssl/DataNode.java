@@ -24,4 +24,9 @@ class DataNode {
   public DataNode getNext() {
     return next;
   }
+
+  @Override
+  public String toString() {
+    return String.valueOf(key);
+  }
 }

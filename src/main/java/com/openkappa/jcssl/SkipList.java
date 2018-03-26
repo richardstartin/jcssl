@@ -3,6 +3,7 @@ package com.openkappa.jcssl;
 import java.util.Arrays;
 
 import static com.openkappa.jcssl.Constants.MAX_SKIP;
+import static com.openkappa.jcssl.Constants.SIMD_SEGMENTS;
 import static com.openkappa.jcssl.Constants.TOP_LANE_BLOCK;
 import static com.openkappa.jcssl.DataNode.newNode;
 import static com.openkappa.jcssl.ProxyNode.newProxyNode;
@@ -16,11 +17,11 @@ public class SkipList {
    * @param maxLevel
    * @param skip
    */
-  public static SkipList createSkipList(byte maxLevel, byte skip) {
-    if (toUnsigned(skip) > MAX_SKIP) {
+  public static SkipList createSkipList(int maxLevel, int skip) {
+    if (skip > MAX_SKIP) {
       throw new IllegalArgumentException("Skip must be less than max skip=" + MAX_SKIP);
     }
-    return new SkipList(maxLevel, skip);
+    return new SkipList((byte)maxLevel, (byte)skip);
   }
 
 
@@ -90,19 +91,23 @@ public class SkipList {
     // traverse over fast lanes
     for (level = maxLevel - 1; level >= 0; --level) {
       int rPos = curPos - startsOfFastLanes[level];
-      while (rPos < itemsPerLevel[level] && key >= fastLanes[++curPos])
+      while (rPos < itemsPerLevel[level] && key >= fastLanes[++curPos]) {
         rPos++;
-      if (level == 0)
+      }
+      if (level == 0) {
         break;
+      }
       curPos  = startsOfFastLanes[level - 1] + rPos * toUnsigned(skip);
     }
-    if (key == fastLanes[--curPos])
+    if (key == fastLanes[--curPos]) {
       return true;
+    }
 
     ProxyNode proxy = fastLaneValues[curPos - startsOfFastLanes[0]];
     for (int i = 1; i < toUnsigned(skip); i++) {
-      if (proxy.getKey(i) == key)
+      if (proxy.getKey(i) == key) {
         return true;
+      }
     }
     return false;
   }
@@ -115,17 +120,18 @@ public class SkipList {
     int curPos = seek(startKey);
     int rPos = 0;
 
-
     for (level = maxLevel - 1; level >= 0; level--) {
       rPos = curPos - startsOfFastLanes[level];
       while (rPos < itemsPerLevel[level] && startKey >= fastLanes[++curPos]) {
         rPos++;
       }
-      if (level == 0) break;
+      if (level == 0) {
+        break;
+      }
       curPos  = startsOfFastLanes[level - 1] + rPos * toUnsigned(skip);
     }
-    int start_of_flane = startsOfFastLanes[0];
-    while (startKey < fastLanes[curPos] && curPos > start_of_flane) {
+    int startOfFastLane = startsOfFastLanes[0];
+    while (startKey < fastLanes[curPos] && curPos > startOfFastLane) {
       curPos--;
     }
 
@@ -139,15 +145,18 @@ public class SkipList {
     }
 
     int count = 0;
-    // search for the range's last matching node
-    // TODO: it's highly likely that there are porting errors here since this section relies on AVX intrinsics in the original code
-    int itemsInFastLane = itemsPerLevel[0];
-    rPos = curPos - start_of_flane;
-    while (rPos < itemsInFastLane && fastLanes[curPos] < endKey) {
-      ++rPos;
-      ++curPos;
-      count += toUnsigned(skip);
+    int itemsInFastLane = itemsPerLevel[0] - SIMD_SEGMENTS;
+    rPos = curPos - startOfFastLane;
+    while (rPos < itemsInFastLane
+            && curPos + SIMD_SEGMENTS < fastLanes.length
+            && fastLanes[curPos + SIMD_SEGMENTS] <= endKey) {
+      curPos += SIMD_SEGMENTS;
+      rPos += SIMD_SEGMENTS;
+      count += (SIMD_SEGMENTS *  toUnsigned(skip));
     }
+    curPos--;
+    rPos--;
+    itemsInFastLane += SIMD_SEGMENTS;
 
     while (endKey >= fastLanes[++curPos] && rPos < itemsInFastLane) {
       rPos++;
