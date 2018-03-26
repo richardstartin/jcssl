@@ -85,30 +85,12 @@ public class SkipList {
    * @return true if the key is in the skip list
    */
   public boolean contains(int key) {
-    int curPos = 0;
-    int first = 0;
-    int last = itemsPerLevel[maxLevel - 1] - 1;
-    int middle = 0;
-    // scan highest fast lane with binary search
-    while (first < last) {
-      middle = (first + last) >>> 1;
-      if (fastLanes[middle] < key) {
-        first = middle + 1;
-      } else if (fastLanes[middle] == key) {
-        curPos = middle;
-        break;
-      } else {
-        last = middle;
-      }
-    }
-    if (first > last)
-      curPos = last;
+    int curPos = seek(key);
     int level;
     // traverse over fast lanes
     for (level = maxLevel - 1; level >= 0; --level) {
       int rPos = curPos - startsOfFastLanes[level];
-      while (rPos < itemsPerLevel[level] &&
-              key >= fastLanes[++curPos])
+      while (rPos < itemsPerLevel[level] && key >= fastLanes[++curPos])
         rPos++;
       if (level == 0)
         break;
@@ -130,25 +112,9 @@ public class SkipList {
     // use the cache to determine the section of the first fast lane that
     // should be used as starting position for search
     int level;
-    int curPos = 0;
+    int curPos = seek(startKey);
     int rPos = 0;
-    int first = 0;
-    int last = itemsPerLevel[maxLevel - 1] - 1;
-    int middle = 0;
-    // scan highest fast lane with binary search
-    while (first < last) {
-      middle = (first + last) / 2;
-      if (fastLanes[middle] < startKey) {
-        first = middle + 1;
-      } else if (fastLanes[middle] == startKey) {
-        curPos = middle;
-        break;
-      } else {
-        last = middle;
-      }
-    }
-    if (first > last)
-      curPos = last;
+
 
     for (level = maxLevel - 1; level >= 0; level--) {
       rPos = curPos - startsOfFastLanes[level];
@@ -222,7 +188,7 @@ public class SkipList {
       if (level == 0)
         fastLaneValues[curPos - startsOfFastLanes[0]] = newProxyNode(this, node);
       fastLaneItems[level]++;
-    } else { // TODO: MAX_VALUE seems to indicate failure to insert
+    } else {
       return Integer.MAX_VALUE;
     }
 
@@ -250,7 +216,6 @@ public class SkipList {
   }
 
   private void resizeFastLanes() {
-    // TODO - literal port, can be simplified greatly
     int newSize = itemsPerLevel[maxLevel - 1] + TOP_LANE_BLOCK;
     int[] levelItems = new int[maxLevel];
     int[] levelStarts = new int[maxLevel];
@@ -272,9 +237,28 @@ public class SkipList {
     startsOfFastLanes = levelStarts;
   }
 
-  // Adds a new element to the corresponding proxy lane in the given skip list
-  void findAndInsertIntoProxyNode(DataNode node) {
+  private void findAndInsertIntoProxyNode(DataNode node) {
     ProxyNode proxy = fastLaneValues[fastLaneItems[0] - 1];
     proxy.insert(node);
+  }
+
+  private int seek(int key) {
+    int curPos = 0;
+    int first = 0;
+    int last = itemsPerLevel[maxLevel - 1] - 1;
+    int middle = 0;
+    // scan highest fast lane with binary search
+    while (first < last) {
+      middle = (first + last) / 2;
+      if (fastLanes[middle] < key) {
+        first = middle + 1;
+      } else if (fastLanes[middle] == key) {
+        curPos = middle;
+        break;
+      } else {
+        last = middle;
+      }
+    }
+    return first > last ? last : curPos;
   }
 }
