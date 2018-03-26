@@ -37,4 +37,12 @@ class ProxyNode {
   DataNode getValue(int index) {
     return values[index];
   }
+
+  @Override
+  public String toString() {
+    return "ProxyNode{" +
+            "keys=" + Arrays.toString(keys) +
+            ", values=" + Arrays.toString(values) +
+            '}';
+  }
 }

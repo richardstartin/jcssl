@@ -3,7 +3,7 @@ package com.openkappa.jcssl;
 import java.util.Arrays;
 
 import static com.openkappa.jcssl.Constants.MAX_SKIP;
-import static com.openkappa.jcssl.Constants.SIMD_SEGMENTS;
+import static com.openkappa.jcssl.Constants.GALLOP;
 import static com.openkappa.jcssl.Constants.TOP_LANE_BLOCK;
 import static com.openkappa.jcssl.DataNode.newNode;
 import static com.openkappa.jcssl.ProxyNode.newProxyNode;
@@ -135,38 +135,41 @@ public class SkipList {
       curPos--;
     }
 
+    int count = 0;
     ProxyNode proxy = fastLaneValues[curPos - startsOfFastLanes[0]];
-    DataNode start = proxy.getValue(toUnsigned(skip) - 1).getNext();
+    DataNode start = proxy.getValue(0);
     for (int i = 0; i < toUnsigned(skip); i++) {
       if (startKey <= proxy.getKey(i)) {
         start = proxy.getValue(i);
         break;
       }
+      --count;
     }
 
-    int count = 0;
-    int itemsInFastLane = itemsPerLevel[0] - SIMD_SEGMENTS;
+
+    int skip = toUnsigned(this.skip);
+    int itemsInFastLane = itemsPerLevel[0];
     rPos = curPos - startOfFastLane;
     while (rPos < itemsInFastLane
-            && curPos + SIMD_SEGMENTS < fastLanes.length
-            && fastLanes[curPos + SIMD_SEGMENTS] <= endKey) {
-      curPos += SIMD_SEGMENTS;
-      rPos += SIMD_SEGMENTS;
-      count += (SIMD_SEGMENTS *  toUnsigned(skip));
+            && curPos + GALLOP < fastLanes.length
+            && fastLanes[curPos + GALLOP] <= endKey) {
+      curPos += GALLOP;
+      rPos += GALLOP;
+      count += (GALLOP * skip);
     }
-    itemsInFastLane += SIMD_SEGMENTS;
-    while (rPos < itemsInFastLane && curPos < fastLanes.length && fastLanes[curPos] < endKey) {
-      ++curPos;
+    while (rPos < itemsInFastLane && curPos < fastLanes.length && fastLanes[++curPos] <= endKey) {
       ++rPos;
-      count += toUnsigned(skip);
+      count += skip;
     }
 
     proxy = fastLaneValues[rPos];
-    DataNode end = proxy.getValue(toUnsigned(skip) - 1);
-    for (int i = 1; i < toUnsigned(skip); i++) {
-      if (endKey < proxy.getKey(i)) {
-        end = proxy.getValue(i - 1);
+    DataNode end = proxy.getValue(0);
+    for (int i = 0; i < skip - 1; i++) {
+      if (end.getKey() >= endKey) {
         break;
+      } else {
+        ++count;
+        end = proxy.getValue(i + 1);
       }
     }
 

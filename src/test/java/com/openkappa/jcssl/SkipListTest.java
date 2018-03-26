@@ -127,4 +127,43 @@ public class SkipListTest {
   }
 
 
+  @Test
+  public void testRangeSparseSkipList() {
+    SkipList sl = SkipList.createSkipList(9, 5);
+    for (int i = 0; i < 100_000; i += 1000) {
+      sl.insert(i);
+    }
+    RangeSearchResult result = sl.searchRange(500, 2500);
+    assertEquals(1000, result.getStart().getKey());
+    assertEquals(3000, result.getEnd().getKey());
+    assertEquals(2, result.getCount());
+  }
+
+
+  @Test
+  public void testRangeSparseSkipList2() {
+    SkipList sl = SkipList.createSkipList(9, 5);
+    for (int i = 0; i < 100_000; i += 10) {
+      sl.insert(i);
+    }
+    RangeSearchResult result = sl.searchRange(50, 110);
+    assertEquals(50, result.getStart().getKey());
+    assertEquals(110, result.getEnd().getKey());
+    assertEquals(6, result.getCount());
+  }
+
+
+  @Test
+  public void testRangeSparseSkipList3() {
+    SkipList sl = SkipList.createSkipList(9, 5);
+    for (int i = 0; i < 100_000; i += 100) {
+      sl.insert(i);
+    }
+    RangeSearchResult result = sl.searchRange(50, 50_000);
+    assertEquals(100, result.getStart().getKey());
+    assertEquals(50_000, result.getEnd().getKey());
+    assertEquals(499, result.getCount());
+  }
+
+
 }

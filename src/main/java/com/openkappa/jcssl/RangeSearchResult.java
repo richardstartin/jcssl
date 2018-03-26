@@ -16,14 +16,26 @@ public class RangeSearchResult {
     this.count = count;
   }
 
+  /**
+   * The inclusive first element of the range
+   * @return
+   */
   public DataNode getStart() {
     return start;
   }
 
+  /**
+   * The exclusive last element of the range
+   * @return
+   */
   public DataNode getEnd() {
     return end;
   }
 
+  /**
+   * The number of values in the range (exclusing the end)
+   * @return the number of elements
+   */
   public int getCount() {
     return count;
   }
