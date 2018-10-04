@@ -1,5 +1,9 @@
 package com.openkappa.jcssl;
 
+import java.util.PrimitiveIterator;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
+
 public class RangeSearchResult {
 
   public static RangeSearchResult of(DataNode start, DataNode end, int count) {
@@ -38,6 +42,10 @@ public class RangeSearchResult {
    */
   public int getCount() {
     return count;
+  }
+
+  public IntStream stream() {
+    return Stream.iterate(start, node -> node != end, DataNode::getNext).mapToInt(DataNode::getKey);
   }
 
 

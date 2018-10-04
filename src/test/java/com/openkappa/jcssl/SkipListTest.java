@@ -2,9 +2,10 @@ package com.openkappa.jcssl;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import java.util.Arrays;
+import java.util.stream.IntStream;
+
+import static org.junit.Assert.*;
 
 public class SkipListTest {
 
@@ -110,16 +111,15 @@ public class SkipListTest {
       sl.insert(i);
       sl.insert(i);
     }
-
     RangeSearchResult r1 = sl.searchRange(0, 1000);
     assertEquals(3000, r1.getCount());
     assertEquals(0, r1.getStart().getKey());
     assertEquals(1000, r1.getEnd().getKey());
+    assertArrayEquals(IntStream.range(0, 1000).flatMap(i -> IntStream.of(new int[] { i, i, i})).toArray(), r1.stream().toArray());
     RangeSearchResult r2 = sl.searchRange(1, 1001);
     assertEquals(3000, r2.getCount());
     assertEquals(1, r2.getStart().getKey());
     assertEquals(1001, r2.getEnd().getKey());
-
     RangeSearchResult r3 = sl.searchRange(93, 128);
     assertEquals((128 - 93) * 3, r3.getCount());
     assertEquals(93, r3.getStart().getKey());
@@ -137,6 +137,7 @@ public class SkipListTest {
     assertEquals(1000, result.getStart().getKey());
     assertEquals(3000, result.getEnd().getKey());
     assertEquals(2, result.getCount());
+    assertEquals(new int[] {1000, 2000}, result.stream().toArray());
   }
 
 
@@ -150,6 +151,7 @@ public class SkipListTest {
     assertEquals(50, result.getStart().getKey());
     assertEquals(110, result.getEnd().getKey());
     assertEquals(6, result.getCount());
+    assertArrayEquals(new int[] {50, 60, 70, 80, 90, 100}, result.stream().toArray());
   }
 
 
@@ -163,6 +165,7 @@ public class SkipListTest {
     assertEquals(100, result.getStart().getKey());
     assertEquals(50_000, result.getEnd().getKey());
     assertEquals(499, result.getCount());
+    assertArrayEquals(IntStream.range(1, 500).map(i -> i * 100).toArray(), result.stream().toArray());
   }
 
 
